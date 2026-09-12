@@ -1,149 +1,121 @@
 import React from 'react';
-import { ResolvedAdLayout } from './resolver';
-import { AdContent } from './spec';
-import { SurfaceScreen } from './surfaces';
+import { ResolvedLayout } from './resolver';
 
 interface RenderDOMProps {
-  layout: ResolvedAdLayout;
-  content: AdContent;
-  screen: SurfaceScreen;
+  layout: ResolvedLayout;
   scale?: number;
+  showDebug?: boolean;
+  primaryColor?: string;
+  accentColor?: string;
 }
 
 export const RenderDOM: React.FC<RenderDOMProps> = ({
   layout,
-  content,
-  screen,
-  scale = screen.previewScale,
+  scale = 1.0,
+  showDebug = false,
+  primaryColor = '#0c101c',
+  accentColor = '#6366f1',
 }) => {
-  const scaledWidth = Math.round(screen.width * scale);
-  const scaledHeight = Math.round(screen.height * scale);
-
   return (
-    <div className="flex flex-col items-center select-none">
-      {/* The Rendered Ad Surface */}
-      <div
-        className="relative overflow-hidden rounded-2xl shadow-xl transition-all duration-300 border border-slate-800/80"
-        style={{
-          width: `${scaledWidth}px`,
-          height: `${scaledHeight}px`,
-          backgroundColor: content.primaryColor || '#0f172a',
-        }}
-      >
-        {/* Brand Name */}
-        {layout.brand.isVisible && (
-          <div
-            className="absolute font-semibold tracking-wide text-white/90 truncate flex items-center"
-            style={{
-              left: `${layout.brand.x * scale}px`,
-              top: `${layout.brand.y * scale}px`,
-              width: layout.brand.width ? `${layout.brand.width * scale}px` : 'auto',
-              fontSize: `${(layout.brand.fontSize || 14) * scale}px`,
-              zIndex: 10,
-            }}
-          >
-            {content.brandName}
-          </div>
-        )}
+    <div
+      className="relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 select-none border border-slate-800/80"
+      style={{
+        width: `${layout.width * scale}px`,
+        height: `${layout.height * scale}px`,
+        backgroundColor: primaryColor,
+        backgroundImage: `radial-gradient(ellipse at 20% 20%, ${accentColor}25, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(16, 185, 129, 0.12), transparent 50%)`,
+      }}
+    >
+      {/* Optional Safe Area outline */}
+      {showDebug && (
+        <div
+          className="absolute border border-dashed border-emerald-500/50 pointer-events-none z-30"
+          style={{
+            left: `${layout.safeArea.left * scale}px`,
+            top: `${layout.safeArea.top * scale}px`,
+            width: `${(layout.width - layout.safeArea.left - layout.safeArea.right) * scale}px`,
+            height: `${(layout.height - layout.safeArea.top - layout.safeArea.bottom) * scale}px`,
+          }}
+        />
+      )}
 
-        {/* Headline */}
-        {layout.headline.isVisible && (
-          <div
-            className="absolute font-extrabold tracking-tight text-white leading-tight overflow-hidden text-ellipsis line-clamp-3"
-            style={{
-              left: `${layout.headline.x * scale}px`,
-              top: `${layout.headline.y * scale}px`,
-              width: `${layout.headline.width * scale}px`,
-              fontSize: `${(layout.headline.fontSize || 24) * scale}px`,
-              lineHeight: 1.15,
-              zIndex: 10,
-            }}
-          >
-            {content.headline}
-          </div>
-        )}
+      {/* Render Placed Elements */}
+      {layout.placedElements.map(({ id, element, rect, fontSize }) => (
+        <div
+          key={id}
+          className={`absolute transition-all duration-300 ease-out flex items-center ${
+            showDebug ? 'outline outline-1 outline-indigo-500/60 bg-indigo-500/5' : ''
+          }`}
+          style={{
+            left: `${rect.x * scale}px`,
+            top: `${rect.y * scale}px`,
+            width: `${rect.width * scale}px`,
+            height: `${rect.height * scale}px`,
+            zIndex: element.role === 'cta' ? 20 : 10,
+          }}
+        >
+          {/* Debug Tag */}
+          {showDebug && (
+            <span className="absolute -top-3.5 left-0 text-[9px] font-mono text-indigo-300 bg-indigo-950 px-1 py-0.5 rounded border border-indigo-700/50 pointer-events-none">
+              #{id} (P{element.priority})
+            </span>
+          )}
 
-        {/* Description */}
-        {layout.description.isVisible && (
-          <div
-            className="absolute text-slate-300 font-normal leading-relaxed overflow-hidden text-ellipsis line-clamp-4"
-            style={{
-              left: `${layout.description.x * scale}px`,
-              top: `${layout.description.y * scale}px`,
-              width: `${layout.description.width * scale}px`,
-              fontSize: `${(layout.description.fontSize || 12) * scale}px`,
-              lineHeight: 1.35,
-              zIndex: 10,
-            }}
-          >
-            {content.description}
-          </div>
-        )}
-
-        {/* Hero Image */}
-        {layout.hero.isVisible && (
-          <div
-            className="absolute overflow-hidden rounded-xl bg-slate-800/50 shadow-inner"
-            style={{
-              left: `${layout.hero.x * scale}px`,
-              top: `${layout.hero.y * scale}px`,
-              width: `${layout.hero.width * scale}px`,
-              height: `${layout.hero.height * scale}px`,
-              zIndex: 5,
-            }}
-          >
+          {/* Logo / Brand Image */}
+          {element.role === 'logo' && element.src && (
             <img
-              src={content.heroImageUrl}
-              alt="Hero"
-              className="w-full h-full object-cover transition-transform duration-300"
-              style={{
-                objectPosition: `${(content.focalPointX || 0.5) * 100}% ${(content.focalPointY || 0.5) * 100}%`,
-              }}
+              src={element.src}
+              alt="Logo"
+              className="h-full w-auto object-contain rounded-md"
             />
-          </div>
-        )}
+          )}
 
-        {/* CTA Button */}
-        {layout.cta.isVisible && (
-          <div
-            className="absolute flex items-center justify-center font-bold text-white shadow-md transition-transform hover:scale-102 active:scale-98 cursor-pointer text-center px-2"
-            style={{
-              left: `${layout.cta.x * scale}px`,
-              top: `${layout.cta.y * scale}px`,
-              width: `${layout.cta.width * scale}px`,
-              height: `${layout.cta.height * scale}px`,
-              fontSize: `${(layout.cta.fontSize || 14) * scale}px`,
-              backgroundColor: content.secondaryColor || '#e94560',
-              borderRadius: `${Math.max(6, Math.round(layout.cta.height * scale * 0.22))}px`,
-              zIndex: 20,
-            }}
-          >
-            <span className="truncate">{content.ctaText}</span>
-          </div>
-        )}
-      </div>
+          {/* Hero Product Image */}
+          {element.role === 'hero' && element.src && (
+            <img
+              src={element.src}
+              alt="Product"
+              className="w-full h-full object-contain rounded-xl drop-shadow-2xl"
+            />
+          )}
 
-      {/* Screen Info & Metrics Below Card (exactly like screenshot) */}
-      <div className="mt-3.5 text-center font-mono w-full" style={{ maxWidth: `${Math.max(280, scaledWidth)}px` }}>
-        <div className="text-slate-400 text-xs">
-          {screen.name} ({screen.width}×{screen.height}) — {screen.width}×{screen.height} ({Math.round(scale * 100)}%)
+          {/* Headline Text */}
+          {element.role === 'headline' && (
+            <h2
+              className="font-extrabold tracking-tight text-white leading-tight"
+              style={{ fontSize: `${(fontSize || 18) * scale}px` }}
+            >
+              {element.content}
+            </h2>
+          )}
+
+          {/* Price Text */}
+          {element.role === 'price' && (
+            <div
+              className="font-semibold text-emerald-400 font-mono tracking-tight"
+              style={{ fontSize: `${(fontSize || 14) * scale}px` }}
+            >
+              {element.content}
+            </div>
+          )}
+
+          {/* CTA Button */}
+          {element.role === 'cta' && (
+            <button
+              type="button"
+              className="w-full h-full rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 cursor-pointer transition transform hover:opacity-95 active:scale-95"
+              style={{
+                fontSize: `${(fontSize || 15) * scale}px`,
+                backgroundColor: accentColor,
+                boxShadow: `0 4px 18px -2px ${accentColor}66`,
+              }}
+            >
+              <span>{element.content}</span>
+              <span className="opacity-80">→</span>
+            </button>
+          )}
         </div>
-
-        <div className="flex items-center justify-center gap-4 text-[10px] text-slate-500 mt-1 uppercase tracking-wider">
-          <div>
-            <span>TEMPLATE</span>{' '}
-            <strong className="text-slate-300 font-semibold lowercase">{layout.template}</strong>
-          </div>
-          <div>
-            <span>SCORE</span>{' '}
-            <strong className="text-slate-300 font-semibold">{screen.score.toFixed(3)}</strong>
-          </div>
-          <div>
-            <span>CANDIDATES</span>{' '}
-            <strong className="text-slate-300 font-semibold">{screen.candidatesCount}</strong>
-          </div>
-        </div>
-      </div>
+      ))}
     </div>
   );
 };
