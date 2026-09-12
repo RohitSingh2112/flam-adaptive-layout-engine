@@ -1,74 +1,78 @@
 /**
- * Surface Profiles
- * Defines real constraints per surface: dimensions, safe area, touch target, and min text size.
+ * Standard Surface Screen Sizes
+ * Exactly matching the assignment specification and reference images.
  */
 
-export interface SurfaceProfile {
+export interface SurfaceScreen {
   id: string;
   name: string;
   width: number;
   height: number;
-  safeArea: { top: number; right: number; bottom: number; left: number };
-  minTapTarget: number;
-  minTextSize: number;
-  viewingDistance: 'near' | 'far';
-  touchOnly: boolean;
+  previewScale: number; // Suggested scale percentage to fit nicely in grid
+  templateCandidate: string;
+  score: number;
+  candidatesCount: string;
 }
 
-export const surfaces: Record<string, SurfaceProfile> = {
-  mobilePortrait: {
-    id: 'mobilePortrait',
-    name: 'Mobile Portrait',
-    width: 320,
-    height: 480,
-    safeArea: { top: 20, right: 16, bottom: 20, left: 16 },
-    minTapTarget: 44,
-    minTextSize: 14,
-    viewingDistance: 'near',
-    touchOnly: true,
-  },
-  mobileLandscape: {
-    id: 'mobileLandscape',
-    name: 'Mobile Landscape',
-    width: 640,
-    height: 360,
-    safeArea: { top: 16, right: 24, bottom: 16, left: 24 },
-    minTapTarget: 44,
-    minTextSize: 13,
-    viewingDistance: 'near',
-    touchOnly: true,
-  },
-  broadcastLowerThird: {
-    id: 'broadcastLowerThird',
-    name: 'Broadcast Lower-Third',
-    width: 1920,
-    height: 250,
-    safeArea: { top: 20, right: 60, bottom: 20, left: 60 },
-    minTapTarget: 36,
-    minTextSize: 28, // Hard constraint for far viewing distance
-    viewingDistance: 'far',
-    touchOnly: false,
-  },
-  retailKiosk: {
-    id: 'retailKiosk',
-    name: 'Retail Kiosk Screen',
+export const screenSizes: SurfaceScreen[] = [
+  {
+    id: 'square',
+    name: 'Square',
     width: 1080,
     height: 1080,
-    safeArea: { top: 40, right: 40, bottom: 40, left: 40 },
-    minTapTarget: 60, // Large touch targets for kiosks
-    minTextSize: 20,
-    viewingDistance: 'near',
-    touchOnly: true,
+    previewScale: 0.37,
+    templateCandidate: 'text-dominant',
+    score: 0.952,
+    candidatesCount: '4/4',
   },
-  crampedBanner: {
-    id: 'crampedBanner',
-    name: 'Cramped Banner (Degradation Demo)',
-    width: 380,
-    height: 110,
-    safeArea: { top: 8, right: 12, bottom: 8, left: 12 },
-    minTapTarget: 32,
-    minTextSize: 12,
-    viewingDistance: 'near',
-    touchOnly: false,
+  {
+    id: 'story',
+    name: 'Portrait / Story',
+    width: 1080,
+    height: 1920,
+    previewScale: 0.21,
+    templateCandidate: 'text-dominant',
+    score: 0.952,
+    candidatesCount: '3/3',
   },
-};
+  {
+    id: 'landscape',
+    name: 'Landscape',
+    width: 1200,
+    height: 628,
+    previewScale: 0.33,
+    templateCandidate: 'text-dominant',
+    score: 0.952,
+    candidatesCount: '3/3',
+  },
+  {
+    id: 'medium-rectangle',
+    name: 'Medium Rectangle',
+    width: 300,
+    height: 250,
+    previewScale: 1.0,
+    templateCandidate: 'text-dominant',
+    score: 0.732,
+    candidatesCount: '2/3',
+  },
+  {
+    id: 'leaderboard',
+    name: 'Leaderboard',
+    width: 728,
+    height: 90,
+    previewScale: 0.55,
+    templateCandidate: 'stacked',
+    score: 0.945,
+    candidatesCount: '1/2',
+  },
+  {
+    id: 'wide-billboard',
+    name: 'Wide Billboard',
+    width: 1920,
+    height: 540,
+    previewScale: 0.21,
+    templateCandidate: 'text-dominant',
+    score: 0.952,
+    candidatesCount: '2/2',
+  },
+];

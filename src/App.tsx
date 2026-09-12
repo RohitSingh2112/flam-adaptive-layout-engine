@@ -1,158 +1,216 @@
-import React, { useState, useMemo } from 'react';
-import { defaultAdSpec } from './spec';
-import { surfaces } from './surfaces';
-import { resolveLayout } from './resolver';
+import React, { useState } from 'react';
+import { defaultContent, AdContent } from './spec';
+import { screenSizes } from './surfaces';
+import { resolveAdLayout } from './resolver';
 import { RenderDOM } from './render-dom';
-import { Smartphone, Monitor, Tv, AlertCircle, Eye, Layers } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [activeSurfaceId, setActiveSurfaceId] = useState<string>('mobilePortrait');
-  const [showDebug, setShowDebug] = useState<boolean>(false);
+  const [content, setContent] = useState<AdContent>(defaultContent);
 
-  const activeSurface = surfaces[activeSurfaceId] || surfaces.mobilePortrait;
-
-  // Run the core constraint resolver
-  const layout = useMemo(() => {
-    return resolveLayout(defaultAdSpec, activeSurface);
-  }, [activeSurface]);
-
-  // Compute scale so large surfaces (e.g. 1920px broadcast or 1080px kiosk) fit nicely on screen
-  const scale = useMemo(() => {
-    const maxW = 760;
-    const maxH = 460;
-    const sW = activeSurface.width > maxW ? maxW / activeSurface.width : 1.0;
-    const sH = activeSurface.height > maxH ? maxH / activeSurface.height : 1.0;
-    return Math.min(1.0, sW, sH);
-  }, [activeSurface.width, activeSurface.height]);
-
-  const getIcon = (id: string) => {
-    if (id === 'broadcastLowerThird') return <Tv className="w-4 h-4" />;
-    if (id === 'retailKiosk') return <Monitor className="w-4 h-4" />;
-    if (id === 'crampedBanner') return <AlertCircle className="w-4 h-4 text-amber-400" />;
-    return <Smartphone className="w-4 h-4" />;
+  const updateContent = <K extends keyof AdContent>(key: K, value: AdContent[K]) => {
+    setContent(prev => ({ ...prev, [key]: value }));
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center p-4 sm:p-8">
-      {/* Header */}
-      <header className="text-center space-y-2 mb-8 max-w-2xl">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-950/80 border border-indigo-700/50 text-indigo-300 text-xs font-mono font-medium">
-          <Layers className="w-3.5 h-3.5" />
-          <span>Flam Frontend R&D</span>
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-          Adaptive Layout Engine for Multi-Surface Ads
-        </h1>
-        <p className="text-sm text-slate-400">
-          A single declarative ad spec resolved dynamically across fundamentally different aspect ratios without hardcoded layouts.
-        </p>
-      </header>
+    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col lg:flex-row">
+      {/* Left Sidebar: CONTENT Options */}
+      <aside className="w-full lg:w-80 lg:min-h-screen bg-[#0b0f19] border-r border-slate-800/80 p-5 space-y-6 flex-shrink-0">
+        
+        {/* Content Section */}
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+            CONTENT
+          </h2>
 
-      {/* Surface Selector Tabs */}
-      <div className="flex flex-wrap items-center justify-center gap-2 mb-6 max-w-4xl">
-        {Object.values(surfaces).map(s => {
-          const isActive = s.id === activeSurfaceId;
-          const isDegradationTest = s.id === 'crampedBanner';
+          <div className="space-y-3.5 text-xs">
+            <div>
+              <label className="block text-slate-400 font-medium mb-1">Brand Name</label>
+              <input
+                type="text"
+                value={content.brandName}
+                onChange={e => updateContent('brandName', e.target.value)}
+                className="w-full bg-[#111625] border border-slate-800 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
 
-          return (
-            <button
-              key={s.id}
-              onClick={() => setActiveSurfaceId(s.id)}
-              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-medium transition border cursor-pointer ${
-                isActive
-                  ? 'bg-indigo-600 text-white border-indigo-400 shadow-lg shadow-indigo-600/30'
-                  : isDegradationTest
-                  ? 'bg-amber-950/30 text-amber-300 border-amber-800/60 hover:bg-amber-900/30'
-                  : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700 hover:text-white'
-              }`}
-            >
-              <span>{getIcon(s.id)}</span>
-              <div className="text-left">
-                <div className="font-semibold">{s.name}</div>
-                <div className={`text-[10px] ${isActive ? 'text-indigo-200' : 'text-slate-500'}`}>
-                  {s.width} × {s.height}
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
+            <div>
+              <label className="block text-slate-400 font-medium mb-1">Headline</label>
+              <input
+                type="text"
+                value={content.headline}
+                onChange={e => updateContent('headline', e.target.value)}
+                className="w-full bg-[#111625] border border-slate-800 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
 
-      {/* Debug Outlines Toggle */}
-      <div className="flex items-center gap-4 mb-4 text-xs">
-        <button
-          type="button"
-          onClick={() => setShowDebug(!showDebug)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition cursor-pointer ${
-            showDebug
-              ? 'bg-indigo-950/60 border-indigo-500 text-indigo-300'
-              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-          }`}
-        >
-          <Eye className="w-3.5 h-3.5" />
-          <span>{showDebug ? 'Debug Boxes: ON' : 'Debug Boxes: OFF'}</span>
-        </button>
-        <span className="text-slate-500 font-mono text-[11px]">
-          Preview Scale: {Math.round(scale * 100)}%
-        </span>
-      </div>
+            <div>
+              <label className="block text-slate-400 font-medium mb-1">Description</label>
+              <textarea
+                rows={4}
+                value={content.description}
+                onChange={e => updateContent('description', e.target.value)}
+                className="w-full bg-[#111625] border border-slate-800 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none transition"
+              />
+            </div>
 
-      {/* Ad Preview Stage */}
-      <div className="flex items-center justify-center p-6 bg-slate-900/50 rounded-3xl border border-slate-800/80 shadow-2xl mb-8 min-h-[360px] w-full max-w-4xl overflow-auto">
-        <RenderDOM
-          layout={layout}
-          scale={scale}
-          showDebug={showDebug}
-        />
-      </div>
+            <div>
+              <label className="block text-slate-400 font-medium mb-1">CTA Text</label>
+              <input
+                type="text"
+                value={content.ctaText}
+                onChange={e => updateContent('ctaText', e.target.value)}
+                className="w-full bg-[#111625] border border-slate-800 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
 
-      {/* Clean Status & Diagnostics Card */}
-      <div className="w-full max-w-2xl bg-slate-900/80 border border-slate-800 rounded-2xl p-5 text-xs space-y-4 shadow-xl">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div className="font-bold text-white text-sm">
-            {activeSurface.name} ({activeSurface.width} × {activeSurface.height}px)
+            <div>
+              <label className="block text-slate-400 font-medium mb-1">Hero Image URL</label>
+              <input
+                type="text"
+                value={content.heroImageUrl}
+                onChange={e => updateContent('heroImageUrl', e.target.value)}
+                className="w-full bg-[#111625] border border-slate-800 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition font-mono text-[11px]"
+              />
+            </div>
           </div>
-          <span className="font-mono text-indigo-300 bg-indigo-950 px-2 py-0.5 rounded border border-indigo-800/60 capitalize">
-            Mode: {layout.layoutMode.replace('-', ' ')} (AR {layout.aspectRatio})
-          </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <span className="text-slate-400 font-semibold block mb-1">Active Elements ({layout.placedElements.length}):</span>
-            <div className="flex flex-wrap gap-1.5">
-              {layout.placedElements.map(p => (
-                <span
-                  key={p.id}
-                  className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono text-[11px]"
-                >
-                  #{p.id}
-                </span>
-              ))}
+        {/* Brand Colors */}
+        <div className="pt-2 border-t border-slate-850">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+            BRAND COLORS
+          </h2>
+
+          <div className="space-y-3 text-xs">
+            <div>
+              <label className="block text-slate-400 font-medium mb-1">Primary</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={content.primaryColor}
+                  onChange={e => updateContent('primaryColor', e.target.value)}
+                  className="w-9 h-9 rounded-lg bg-transparent border border-slate-800 cursor-pointer p-0.5"
+                />
+                <input
+                  type="text"
+                  value={content.primaryColor}
+                  onChange={e => updateContent('primaryColor', e.target.value)}
+                  className="flex-1 bg-[#111625] border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-slate-400 font-medium mb-1">Secondary</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={content.secondaryColor}
+                  onChange={e => updateContent('secondaryColor', e.target.value)}
+                  className="w-9 h-9 rounded-lg bg-transparent border border-slate-800 cursor-pointer p-0.5"
+                />
+                <input
+                  type="text"
+                  value={content.secondaryColor}
+                  onChange={e => updateContent('secondaryColor', e.target.value)}
+                  className="flex-1 bg-[#111625] border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Focal Point */}
+        <div className="pt-2 border-t border-slate-850">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+            FOCAL POINT
+          </h2>
+
+          <div className="space-y-3.5 text-xs">
+            <div>
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span>X (0–1)</span>
+                <span className="font-mono text-slate-300">{content.focalPointX.toFixed(2)}</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={content.focalPointX}
+                onChange={e => updateContent('focalPointX', parseFloat(e.target.value))}
+                className="w-full accent-[#e94560] cursor-pointer"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span>Y (0–1)</span>
+                <span className="font-mono text-slate-300">{content.focalPointY.toFixed(2)}</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={content.focalPointY}
+                onChange={e => updateContent('focalPointY', parseFloat(e.target.value))}
+                className="w-full accent-[#e94560] cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+      {/* Main Content Area: Screen Layouts Grid */}
+      <main className="flex-1 p-6 lg:p-10 overflow-auto bg-[#070b14]">
+        <div className="max-w-7xl mx-auto space-y-8">
+          
+          {/* Top Bar Header */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-white">
+                Multi-Surface Adaptive Ad Preview
+              </h1>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Adapts one declarative content spec across 6 responsive surface dimensions live.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+              <span className="px-3 py-1 rounded-full bg-slate-900 border border-slate-800">
+                {screenSizes.length} Target Surfaces
+              </span>
             </div>
           </div>
 
-          <div>
-            <span className="text-slate-400 font-semibold block mb-1">Priority Degradation Status:</span>
-            {layout.droppedElements.length > 0 ? (
-              <div className="space-y-1">
-                {layout.droppedElements.map(d => (
-                  <div
-                    key={d.id}
-                    className="p-1.5 rounded bg-amber-950/40 border border-amber-800/50 text-amber-300 text-[11px]"
-                  >
-                    ⚠️ <strong>#{d.id}</strong>: {d.reason}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <span className="text-emerald-400 font-medium">
-                ✓ All elements fit comfortably with zero degradation.
-              </span>
-            )}
+          {/* Grid of Screen Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start justify-items-center">
+            {screenSizes.map(screen => {
+              const layout = resolveAdLayout(content, screen);
+
+              return (
+                <div
+                  key={screen.id}
+                  className={`flex flex-col items-center justify-center p-4 rounded-3xl bg-[#0a0f1d]/60 border border-slate-800/60 shadow-xl w-full ${
+                    screen.id === 'leaderboard' || screen.id === 'wide-billboard'
+                      ? 'md:col-span-2'
+                      : ''
+                  }`}
+                >
+                  <RenderDOM
+                    layout={layout}
+                    content={content}
+                    screen={screen}
+                  />
+                </div>
+              );
+            })}
           </div>
+
         </div>
-      </div>
+      </main>
     </div>
   );
 };
