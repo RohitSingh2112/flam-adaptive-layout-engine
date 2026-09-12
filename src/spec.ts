@@ -6,7 +6,7 @@
 export interface AdElement {
   id: string;
   type: 'text' | 'image' | 'button';
-  role: 'headline' | 'hero' | 'cta' | 'logo' | 'price';
+  role: 'headline' | 'description' | 'hero' | 'cta' | 'logo' | 'price';
   priority: 1 | 2 | 3;
   content?: string;
   src?: string;
@@ -25,6 +25,7 @@ export interface AdSpec {
 
 export interface AdContentConfig {
   headline: string;
+  description: string;
   price: string;
   ctaText: string;
   heroImage: string;
@@ -35,6 +36,7 @@ export interface AdContentConfig {
 
 export const defaultContentConfig: AdContentConfig = {
   headline: 'Spatial Audio for the XR Frontier',
+  description: 'Experience studio-quality audio with our next-gen wireless hardware. Active noise cancellation, 36-hour battery, and seamless spatial tracking.',
   price: '$299 • Free Express Shipping',
   ctaText: 'Experience Now',
   heroImage: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=600&q=80',
@@ -66,6 +68,13 @@ export function createAdSpec(config: AdContentConfig): AdSpec {
         role: 'headline',
         priority: 1,
         content: config.headline,
+      },
+      {
+        id: 'description',
+        type: 'text',
+        role: 'description',
+        priority: 2,
+        content: config.description,
       },
       {
         id: 'product-image',

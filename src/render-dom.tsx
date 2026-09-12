@@ -92,6 +92,16 @@ export const RenderDOM: React.FC<RenderDOMProps> = ({
             </h2>
           )}
 
+          {/* Description Text */}
+          {element.role === 'description' && (
+            <p
+              className="text-neutral-300 font-normal leading-relaxed overflow-hidden text-ellipsis line-clamp-3"
+              style={{ fontSize: `${(fontSize || 13) * scale}px` }}
+            >
+              {element.content}
+            </p>
+          )}
+
           {/* Price Text */}
           {element.role === 'price' && (
             <div

@@ -172,6 +172,16 @@ export const App: React.FC = () => {
             </div>
 
             <div>
+              <label className="block text-neutral-400 font-medium mb-1">Description Text</label>
+              <textarea
+                rows={2}
+                value={contentConfig.description}
+                onChange={e => updateField('description', e.target.value)}
+                className="w-full bg-[#111116] border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition resize-none"
+              />
+            </div>
+
+            <div>
               <label className="block text-neutral-400 font-medium mb-1">Price / Tagline</label>
               <input
                 type="text"

@@ -22,37 +22,37 @@ describe('Multi-Surface Layout Resolver for Standard Sizes', () => {
   it('resolves Widescreen Landscape (16:9, 1920x1080) into two-column', () => {
     const layout = resolveLayout(defaultAdSpec, surfaces.widescreenLandscape);
     expect(layout.layoutMode).toBe('two-column');
-    expect(layout.placedElements.length).toBe(5);
+    expect(layout.placedElements.length).toBe(6);
   });
 
   it('resolves Full Vertical / Stories (9:16, 1080x1920) into vertical-stack', () => {
     const layout = resolveLayout(defaultAdSpec, surfaces.fullVerticalStories);
     expect(layout.layoutMode).toBe('vertical-stack');
-    expect(layout.placedElements.length).toBe(5);
+    expect(layout.placedElements.length).toBe(6);
   });
 
   it('resolves Universal Square (1:1, 1080x1080) into vertical-stack with zero overlap', () => {
     const layout = resolveLayout(defaultAdSpec, surfaces.universalSquare);
     expect(layout.layoutMode).toBe('vertical-stack');
-    expect(layout.placedElements.length).toBe(5);
+    expect(layout.placedElements.length).toBe(6);
   });
 
   it('resolves Standard Portrait (4:5, 1080x1350) into vertical-stack', () => {
     const layout = resolveLayout(defaultAdSpec, surfaces.standardPortrait);
     expect(layout.layoutMode).toBe('vertical-stack');
-    expect(layout.placedElements.length).toBe(5);
+    expect(layout.placedElements.length).toBe(6);
   });
 
   it('resolves Presentation Landscape (4:3, 1024x768) into two-column', () => {
     const layout = resolveLayout(defaultAdSpec, surfaces.presentationLandscape);
     expect(layout.layoutMode).toBe('two-column');
-    expect(layout.placedElements.length).toBe(5);
+    expect(layout.placedElements.length).toBe(6);
   });
 
   it('resolves Classic Photo Portrait (3:4, 1200x1600) into vertical-stack', () => {
     const layout = resolveLayout(defaultAdSpec, surfaces.classicPhotoPortrait);
     expect(layout.layoutMode).toBe('vertical-stack');
-    expect(layout.placedElements.length).toBe(5);
+    expect(layout.placedElements.length).toBe(6);
   });
 
   it('demonstrates priority-based degradation on cramped space (P3 logo drops cleanly)', () => {
