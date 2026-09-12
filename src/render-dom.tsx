@@ -13,23 +13,26 @@ export const RenderDOM: React.FC<RenderDOMProps> = ({
   layout,
   scale = 1.0,
   showDebug = false,
-  primaryColor = '#0c101c',
-  accentColor = '#6366f1',
+  primaryColor = '#000000',
+  accentColor = '#2563eb',
 }) => {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 select-none border border-slate-800/80"
+      className="relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 select-none border border-white/15"
       style={{
         width: `${layout.width * scale}px`,
         height: `${layout.height * scale}px`,
         backgroundColor: primaryColor,
-        backgroundImage: `radial-gradient(ellipse at 20% 20%, ${accentColor}25, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(16, 185, 129, 0.12), transparent 50%)`,
+        backgroundImage: `
+          radial-gradient(ellipse at 80% 20%, ${accentColor}30, transparent 55%),
+          radial-gradient(ellipse at 20% 85%, rgba(255, 255, 255, 0.04), transparent 45%)
+        `,
       }}
     >
       {/* Optional Safe Area outline */}
       {showDebug && (
         <div
-          className="absolute border border-dashed border-emerald-500/50 pointer-events-none z-30"
+          className="absolute border border-dashed border-blue-400/50 pointer-events-none z-30"
           style={{
             left: `${layout.safeArea.left * scale}px`,
             top: `${layout.safeArea.top * scale}px`,
@@ -44,7 +47,7 @@ export const RenderDOM: React.FC<RenderDOMProps> = ({
         <div
           key={id}
           className={`absolute transition-all duration-300 ease-out flex items-center ${
-            showDebug ? 'outline outline-1 outline-indigo-500/60 bg-indigo-500/5' : ''
+            showDebug ? 'outline outline-1 outline-blue-400/60 bg-blue-500/10' : ''
           }`}
           style={{
             left: `${rect.x * scale}px`,
@@ -56,7 +59,7 @@ export const RenderDOM: React.FC<RenderDOMProps> = ({
         >
           {/* Debug Tag */}
           {showDebug && (
-            <span className="absolute -top-3.5 left-0 text-[9px] font-mono text-indigo-300 bg-indigo-950 px-1 py-0.5 rounded border border-indigo-700/50 pointer-events-none">
+            <span className="absolute -top-3.5 left-0 text-[9px] font-mono text-blue-300 bg-black px-1 py-0.5 rounded border border-blue-500/50 pointer-events-none">
               #{id} (P{element.priority})
             </span>
           )}
@@ -75,7 +78,7 @@ export const RenderDOM: React.FC<RenderDOMProps> = ({
             <img
               src={element.src}
               alt="Product"
-              className="w-full h-full object-contain rounded-xl drop-shadow-2xl"
+              className="w-full h-full object-contain rounded-xl drop-shadow-[0_12px_24px_rgba(37,99,235,0.25)]"
             />
           )}
 
@@ -92,7 +95,7 @@ export const RenderDOM: React.FC<RenderDOMProps> = ({
           {/* Price Text */}
           {element.role === 'price' && (
             <div
-              className="font-semibold text-emerald-400 font-mono tracking-tight"
+              className="font-semibold text-blue-400 font-mono tracking-tight"
               style={{ fontSize: `${(fontSize || 14) * scale}px` }}
             >
               {element.content}
@@ -107,11 +110,11 @@ export const RenderDOM: React.FC<RenderDOMProps> = ({
               style={{
                 fontSize: `${(fontSize || 15) * scale}px`,
                 backgroundColor: accentColor,
-                boxShadow: `0 4px 18px -2px ${accentColor}66`,
+                boxShadow: `0 4px 20px -2px ${accentColor}80`,
               }}
             >
               <span>{element.content}</span>
-              <span className="opacity-80">→</span>
+              <span className="text-white/80">→</span>
             </button>
           )}
         </div>

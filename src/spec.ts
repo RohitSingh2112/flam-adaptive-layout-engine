@@ -1,15 +1,16 @@
 /**
  * Declarative Ad Spec & Content Options
+ * Theme: Black, Blue, and White
  */
 
 export interface AdElement {
   id: string;
   type: 'text' | 'image' | 'button';
   role: 'headline' | 'hero' | 'cta' | 'logo' | 'price';
-  priority: 1 | 2 | 3; // 1 = Critical, 2 = Secondary, 3 = Can drop first
-  content?: string;   // For text and button label
-  src?: string;       // For images
-  aspectRatio?: number; // width / height for images
+  priority: 1 | 2 | 3;
+  content?: string;
+  src?: string;
+  aspectRatio?: number;
 }
 
 export interface AdSpec {
@@ -34,12 +35,12 @@ export interface AdContentConfig {
 
 export const defaultContentConfig: AdContentConfig = {
   headline: 'Spatial Audio for the XR Frontier',
-  price: '$299 • Free Shipping',
+  price: '$299 • Free Express Shipping',
   ctaText: 'Experience Now',
   heroImage: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=600&q=80',
   logoImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=140&q=80',
-  primaryColor: '#0c101c',
-  accentColor: '#6366f1',
+  primaryColor: '#000000', // Deep Black
+  accentColor: '#2563eb',  // Vibrant Blue
 };
 
 export function createAdSpec(config: AdContentConfig): AdSpec {
@@ -55,7 +56,7 @@ export function createAdSpec(config: AdContentConfig): AdSpec {
         id: 'logo',
         type: 'image',
         role: 'logo',
-        priority: 3, // Dropped first if space is tight
+        priority: 3,
         src: config.logoImage,
         aspectRatio: 3.2,
       },
@@ -63,14 +64,14 @@ export function createAdSpec(config: AdContentConfig): AdSpec {
         id: 'headline',
         type: 'text',
         role: 'headline',
-        priority: 1, // Critical
+        priority: 1,
         content: config.headline,
       },
       {
         id: 'product-image',
         type: 'image',
         role: 'hero',
-        priority: 1, // Critical
+        priority: 1,
         src: config.heroImage,
         aspectRatio: 1.1,
       },
@@ -78,14 +79,14 @@ export function createAdSpec(config: AdContentConfig): AdSpec {
         id: 'price',
         type: 'text',
         role: 'price',
-        priority: 2, // Secondary
+        priority: 2,
         content: config.price,
       },
       {
         id: 'cta',
         type: 'button',
         role: 'cta',
-        priority: 1, // Critical
+        priority: 1,
         content: config.ctaText,
       },
     ],

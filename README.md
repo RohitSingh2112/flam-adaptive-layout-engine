@@ -1,31 +1,31 @@
 # Flam — Multi-Surface Adaptive Ad Engine
 
-A type-safe, constraint-based layout engine built with TypeScript and React that takes a single declarative content specification and automatically resolves it across all major standard aspect ratios and display surfaces.
+A type-safe, constraint-based layout engine built with TypeScript and React that takes a single declarative ad specification and automatically adapts it across all 6 standard aspect ratios and display surfaces.
 
 ---
 
-## 📱 Supported Screen Sizes & Aspect Ratios
+## 📱 Supported Standard Screen Sizes
 
-| Surface Name | Aspect Ratio | Dimensions (px) | Best For |
+| Surface Name | Aspect Ratio | Dimensions (px) | Layout Mode |
 |---|---|---|---|
-| **Widescreen Landscape** | **16:9** | $1920 \times 1080$ | TV screens, digital display boards, website banners, Zoom presentations (Full HD standard). |
-| **Full Vertical / Stories** | **9:16** | $1080 \times 1920$ | Mobile screens, Instagram Stories, TikTok, YouTube Shorts, vertical signage kiosks. |
-| **Universal Square** | **1:1** | $1080 \times 1080$ | Instagram feed posts, Facebook ads, centered digital flyers. |
-| **Standard Portrait** | **4:5** | $1080 \times 1350$ | Vertical social media posts (maximum screen space on phone feeds without cut off). |
-| **Presentation Landscape** | **4:3** | $1024 \times 768$ | Standard presentation slides, iPad screens, traditional desktop monitor displays. |
-| **Classic Photo Portrait** | **3:4** | $1200 \times 1600$ | E-commerce graphics, digital lookbooks, vertical blog flyers. |
-| **Cramped Banner** | **3.5:1** | $380 \times 110$ | Priority-based degradation stress test (P3 logo drops cleanly). |
+| **Widescreen Landscape** | **16:9** | $1920 \times 1080$ | Two-Column Split |
+| **Full Vertical / Stories** | **9:16** | $1080 \times 1920$ | Vertical Stack |
+| **Universal Square** | **1:1** | $1080 \times 1080$ | Vertical Stack |
+| **Standard Portrait** | **4:5** | $1080 \times 1350$ | Vertical Stack |
+| **Presentation Landscape** | **4:3** | $1024 \times 768$ | Two-Column Split |
+| **Classic Photo Portrait** | **3:4** | $1200 \times 1600$ | Vertical Stack |
 
 ---
 
-## 🎨 Interactive Content Customization
-Click **Content Options** in the header to edit:
-- **Headline Text** (dynamic text re-wrapping)
-- **Price / Tagline** (secondary copy)
-- **CTA Button Label** (action label)
-- **Hero Image URL** (custom product visual)
-- **Background Color** (color picker + hex)
-- **CTA Accent Color** (color picker + hex)
+## 🎨 Theme & Interactive Customization
+- **Modern Black, Blue & White Theme**: Deep black backdrop (`#050507`), vibrant blue active accents (`#2563eb`), and high-contrast white typography (`#ffffff`).
+- **Content Options Drawer**: Click **`[Sliders] Content Options`** to customize:
+  - Headline text
+  - Price / Tagline
+  - CTA Button label
+  - Hero image URL
+  - Card background color (defaults to black)
+  - CTA accent color (defaults to electric blue)
 
 ---
 
@@ -38,7 +38,7 @@ npm install
 # 2. Run development server
 npm run dev
 
-# 3. Run unit tests
+# 3. Run automated unit tests
 npm test
 
 # 4. Build for production

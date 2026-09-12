@@ -56,7 +56,19 @@ describe('Multi-Surface Layout Resolver for Standard Sizes', () => {
   });
 
   it('demonstrates priority-based degradation on cramped space (P3 logo drops cleanly)', () => {
-    const layout = resolveLayout(defaultAdSpec, surfaces.crampedBanner);
+    const crampedTestSurface: SurfaceProfile = {
+      id: 'crampedTest',
+      name: 'Cramped Test Surface',
+      aspectRatioLabel: '3.5:1',
+      width: 380,
+      height: 110,
+      safeArea: { top: 8, right: 12, bottom: 8, left: 12 },
+      minTapTarget: 32,
+      minTextSize: 12,
+      viewingDistance: 'near',
+      touchOnly: false,
+    };
+    const layout = resolveLayout(defaultAdSpec, crampedTestSurface);
     expect(layout.droppedElements.length).toBeGreaterThan(0);
     const droppedLogo = layout.droppedElements.find(d => d.id === 'logo');
     expect(droppedLogo).toBeDefined();
