@@ -1,133 +1,77 @@
 # Flam — Adaptive Layout Engine for Multi-Surface Ads
 
-A type-safe, constraint-based layout engine built in TypeScript and React that takes a **single declarative ad specification** and resolves it dynamically across wildly different surfaces (tall mobile interstitial, wide broadcast lower-third, square retail kiosk, and arbitrary custom aspect ratios) **without per-surface hardcoded layouts or CSS media query hacks**.
+A clean, lightweight, constraint-based layout engine built in TypeScript and React that takes a **single declarative ad specification** and adapts it dynamically across wildly different surfaces (mobile portrait, mobile landscape, broadcast lower-third, retail kiosk, and cramped banner) **without per-surface hardcoded layouts or CSS media query hacks**.
 
 ---
 
 ## 🚀 Quick Start
 
 ### 1. Installation
-Ensure you have Node.js (v18+) installed:
 ```bash
 npm install
 ```
 
-### 2. Run Interactive Development Server
+### 2. Run Interactive Demo
 ```bash
 npm run dev
 ```
-Open your browser at `http://localhost:5173` to explore the interactive showcase.
+Open `http://localhost:5173` to switch surfaces and test the engine live.
 
-### 3. Run Automated Test Suite
+### 3. Run Automated Tests
 ```bash
 npm test
 ```
-Executes 7 unit tests verifying constraint solving, collision detection, and priority degradation.
 
-### 4. Build for Production Deployment
+### 4. Build for Production
 ```bash
 npm run build
 ```
-Creates an optimized static bundle in `dist/`, ready for 1-click deployment on **Vercel**, **Netlify**, or **GitHub Pages**.
 
 ---
 
-## 🎯 Features & Core Requirements
+## 🎯 Architecture & Implementation
 
-1. **Single Declarative Ad Spec (`spec.ts`)**:
-   - The ad content (headline, hero visual, price tag, CTA button, branding logo) is declared **once** via `defineAd()`.
-   - Each element possesses semantic roles (`primary`, `hero`, `action`, `branding`, `secondary`) and explicit priority levels (`1 = critical`, `2 = high value`, `3 = supplemental`).
-
-2. **Real Constraint-Based Surface Profiles (`surfaces.ts`)**:
-   - Beyond just width and height, profiles specify `safeArea`, `minTapTarget` (touch ergonomics), `minTextSize` (typography legibility floors), `viewingDistance` (`near` vs. `far` for broadcast TV), and `touchOnly`.
-
-3. **Pure Algorithmic Constraint Resolver (`resolver.ts`)**:
-   - **No hardcoded branches**: No `if (surface === "mobile") return layoutA`.
-   - Layout topology is computed mathematically from the continuous aspect ratio $AR = W_{avail} / H_{avail}$:
-     - Extreme Wide ($AR \ge 2.2$): Horizontal pipeline (Broadcast Lower-Third)
-     - Wide ($1.15 \le AR < 2.2$): Dual-column split (Mobile Landscape, Tablet)
-     - Balanced Square ($0.85 \le AR < 1.15$): High-density centered kiosk grid
-     - Tall Portrait ($AR < 0.85$): Vertical flow cascade (Mobile Interstitial)
-
-4. **Deterministic Priority Degradation**:
-   - When available viewport height or width is constrained (or squeezed via the live slider), the engine enters an elastic degradation loop:
-     1. Flexible elements scale down to their minimum dimension.
-     2. Supplemental elements with Priority 3 (e.g. `logo` / branding) drop cleanly with recorded reasons.
-     3. Priority 2 elements (e.g. `price`) drop next if space remains cramped.
-     4. Core conversion elements (Priority 1: `headline`, `product-image`, `cta`) are preserved and centered with zero overlap or clipping.
-
-5. **Multi-Target Renderers**:
-   - `render-dom.tsx`: Clean DOM/CSS renderer with bounding box debug guides and smooth transitions.
-   - `render-canvas.ts`: Alternative Canvas 2D renderer proving total separation of the solver from presentation.
-
-6. **Bonus Capabilities**:
-   - **Interactive Viewport Squeeze**: Live range sliders to continuously squeeze width/height and observe real-time degradation.
-   - **5th Unknown-at-Design-Time Surface Creator**: Create completely arbitrary surfaces at runtime and observe the solver resolve them with zero code changes.
-   - **Real Text Measurement Engine (`text-measure.ts`)**: Uses HTML5 Canvas `measureText` to measure typography bounding boxes accurately.
-
----
-
-## 📐 Resolution Flow
-
-```
-┌─────────────────┐       ┌──────────────────────┐
-│  AdSpec Schema  │   +   │   Surface Profile    │
-│  (1 spec only)  │       │ (Constraints & Safe) │
-└────────┬────────┘       └──────────┬───────────┘
-         │                           │
-         └─────────────┬─────────────┘
-                       ▼
-         ┌───────────────────────────┐
-         │ Constraint Resolver       │
-         │ - Deduct Safe Area        │
-         │ - AR Topology Selection   │
-         │ - Enforce Hard Bounds     │
-         │ - Priority Degradation    │
-         └─────────────┬─────────────┘
-                       ▼
-         ┌───────────────────────────┐
-         │ ResolvedLayout Tree       │
-         │ (x, y, w, h per element)  │
-         └─────────────┬─────────────┘
-                       │
-         ┌─────────────┴─────────────┐
-         ▼                           ▼
-┌─────────────────┐         ┌─────────────────┐
-│ DOM/CSS Renderer│         │ Canvas Renderer │
-└─────────────────┘         └─────────────────┘
+### 1. Declarative Ad Spec (`src/spec.ts`)
+The ad is defined once with semantic roles and priority levels:
+```typescript
+const adSpec = defineAd({
+  id: 'flam-audio',
+  title: 'Flam Spatial One XR Headphones',
+  elements: [
+    { id: 'logo', type: 'image', role: 'logo', priority: 3, ... },
+    { id: 'headline', type: 'text', role: 'headline', priority: 1, ... },
+    { id: 'product-image', type: 'image', role: 'hero', priority: 1, ... },
+    { id: 'price', type: 'text', role: 'price', priority: 2, ... },
+    { id: 'cta', type: 'button', role: 'cta', priority: 1, ... },
+  ],
+});
 ```
 
----
+### 2. Surface Profiles (`src/surfaces.ts`)
+Surfaces specify real constraints: dimensions, safe areas, minimum tap targets, and minimum readable text sizes:
+- **Mobile Portrait** ($320 \times 480$): Tall 9:16 portrait.
+- **Mobile Landscape** ($640 \times 360$): Widescreen smartphone layout.
+- **Broadcast Lower-Third** ($1920 \times 250$): Far viewing distance ($10\text{ft}$) enforcing $\ge 28\text{px}$ readable text.
+- **Retail Kiosk** ($1080 \times 1080$): Square touch kiosk enforcing $\ge 60\text{px}$ tap targets.
+- **Cramped Banner** ($380 \times 110$): Stress-test demonstrating priority degradation.
 
-## 🛠️ TypeScript Design & Type Safety
+### 3. Constraint Resolver Algorithm (`src/resolver.ts`)
+- **No hardcoded surface names**: Topology is chosen mathematically from continuous aspect ratio $\text{AR} = W_{\text{avail}} / H_{\text{avail}}$:
+  - $\text{AR} \ge 2.0 \implies$ **Horizontal Row** (Hero $\to$ Copy $\to$ CTA)
+  - $1.0 \le \text{AR} < 2.0 \implies$ **Two-Column Split** (Hero on left, text & CTA on right)
+  - $\text{AR} < 1.0 \implies$ **Vertical Stack** (Logo $\to$ Headline $\to$ Hero $\to$ Price $\to$ CTA)
+- **Priority Degradation**: If space is constrained, Priority 3 (`logo`) drops cleanly first, followed by Priority 2 (`price`), while Priority 1 (`headline`, `hero`, `cta`) are strictly preserved.
 
-- **Discriminated Unions**: Elements are typed as `TextAdElement | ImageAdElement | ButtonAdElement` tagged with `type: 'text' | 'image' | 'button'`.
-- **Validation**: `defineAd()` and `validateSurface()` prevent duplicate IDs, empty contents, missing labels, and safe areas exceeding screen bounds at runtime.
-- **Resolved Output**: `ResolvedElement` provides strictly typed `{ rect: { x, y, width, height }, computedStyles, isVisible, status, degradationReason }`.
+### 4. DOM Renderer (`src/render-dom.tsx`)
+Pure presentation component that maps calculated layout coordinates `(x, y, width, height)` directly to styled elements with smooth CSS animations.
 
 ---
 
 ## 🧪 Automated Test Suite
-
-Run tests via `npm test`:
-- `✓ AdSpec and Surface Validation`: Tests duplicate ID and safe-area overflow prevention.
-- `✓ Mobile Interstitial`: Verifies non-overlapping portrait placement.
-- `✓ Broadcast Lower-Third`: Verifies horizontal placement and `minTextSize >= 32px`.
-- `✓ Retail Kiosk`: Verifies `minTapTarget >= 64px`.
-- `✓ Priority Degradation`: Verifies Priority 3 logo drops first on cramped banners.
-- `✓ Unknown Surface`: Verifies live resolution for an arbitrary automotive HUD.
-
----
-
-## ⚠️ Known Limitations
-
-- Image aspect ratios are preserved by letterboxing or fit within computed rects rather than content-aware saliency cropping.
-- Multi-column complex nested flexbox wrap is simplified into 4 primary mathematical topology archetypes.
-
----
-
-## ⏱️ Time Spent
-- **Architecture & Constraint Solver Design**: ~2.5 hours
-- **Renderer & Component Implementation**: ~2 hours
-- **Testing & Documentation**: ~1 hour
-- **Total**: ~5.5 hours
+- `✓ AdSpec Validation`: Prevents duplicate element IDs.
+- `✓ Mobile Portrait`: Adapts to vertical stack.
+- `✓ Mobile Landscape`: Adapts to two-column split.
+- `✓ Broadcast Lower-Third`: Adapts to horizontal row with enforced text size floor.
+- `✓ Retail Kiosk`: Adapts to two-column with enforced 60px tap target.
+- `✓ Priority Degradation`: Verifies Priority 3 logo drops cleanly on cramped banner while CTA and headline remain intact.
+- `✓ Unknown Surface`: Verifies live adaptation to an arbitrary custom aspect ratio.
