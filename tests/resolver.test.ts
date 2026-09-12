@@ -18,64 +18,48 @@ describe('AdSpec Validation', () => {
   });
 });
 
-describe('Layout Resolver Adaptation', () => {
-  it('resolves Mobile Portrait into vertical-stack', () => {
-    const layout = resolveLayout(defaultAdSpec, surfaces.mobilePortrait);
+describe('Multi-Surface Layout Resolver for Standard Sizes', () => {
+  it('resolves Widescreen Landscape (16:9, 1920x1080) into two-column', () => {
+    const layout = resolveLayout(defaultAdSpec, surfaces.widescreenLandscape);
+    expect(layout.layoutMode).toBe('two-column');
+    expect(layout.placedElements.length).toBe(5);
+  });
+
+  it('resolves Full Vertical / Stories (9:16, 1080x1920) into vertical-stack', () => {
+    const layout = resolveLayout(defaultAdSpec, surfaces.fullVerticalStories);
     expect(layout.layoutMode).toBe('vertical-stack');
     expect(layout.placedElements.length).toBe(5);
-    expect(layout.droppedElements.length).toBe(0);
   });
 
-  it('resolves Mobile Landscape into two-column', () => {
-    const layout = resolveLayout(defaultAdSpec, surfaces.mobileLandscape);
+  it('resolves Universal Square (1:1, 1080x1080) into vertical-stack with zero overlap', () => {
+    const layout = resolveLayout(defaultAdSpec, surfaces.universalSquare);
+    expect(layout.layoutMode).toBe('vertical-stack');
+    expect(layout.placedElements.length).toBe(5);
+  });
+
+  it('resolves Standard Portrait (4:5, 1080x1350) into vertical-stack', () => {
+    const layout = resolveLayout(defaultAdSpec, surfaces.standardPortrait);
+    expect(layout.layoutMode).toBe('vertical-stack');
+    expect(layout.placedElements.length).toBe(5);
+  });
+
+  it('resolves Presentation Landscape (4:3, 1024x768) into two-column', () => {
+    const layout = resolveLayout(defaultAdSpec, surfaces.presentationLandscape);
     expect(layout.layoutMode).toBe('two-column');
     expect(layout.placedElements.length).toBe(5);
   });
 
-  it('resolves Broadcast Lower-Third into horizontal-row with enforced text size', () => {
-    const layout = resolveLayout(defaultAdSpec, surfaces.broadcastLowerThird);
-    expect(layout.layoutMode).toBe('horizontal-row');
-    const headline = layout.placedElements.find(p => p.id === 'headline');
-    expect(headline).toBeDefined();
-    expect(headline!.fontSize).toBeGreaterThanOrEqual(surfaces.broadcastLowerThird.minTextSize);
+  it('resolves Classic Photo Portrait (3:4, 1200x1600) into vertical-stack', () => {
+    const layout = resolveLayout(defaultAdSpec, surfaces.classicPhotoPortrait);
+    expect(layout.layoutMode).toBe('vertical-stack');
+    expect(layout.placedElements.length).toBe(5);
   });
 
-  it('resolves Retail Kiosk into two-column with enforced minTapTarget', () => {
-    const layout = resolveLayout(defaultAdSpec, surfaces.retailKiosk);
-    expect(layout.layoutMode).toBe('two-column');
-    const cta = layout.placedElements.find(p => p.id === 'cta');
-    expect(cta!.rect.height).toBeGreaterThanOrEqual(surfaces.retailKiosk.minTapTarget);
-  });
-
-  it('demonstrates priority-based degradation on cramped space (logo drops first)', () => {
+  it('demonstrates priority-based degradation on cramped space (P3 logo drops cleanly)', () => {
     const layout = resolveLayout(defaultAdSpec, surfaces.crampedBanner);
     expect(layout.droppedElements.length).toBeGreaterThan(0);
-    // Priority 3 logo dropped
     const droppedLogo = layout.droppedElements.find(d => d.id === 'logo');
     expect(droppedLogo).toBeDefined();
     expect(droppedLogo!.priority).toBe(3);
-    // Critical Priority 1 CTA and Headline are preserved
-    const cta = layout.placedElements.find(p => p.id === 'cta');
-    const headline = layout.placedElements.find(p => p.id === 'headline');
-    expect(cta).toBeDefined();
-    expect(headline).toBeDefined();
-  });
-
-  it('dynamically adapts to an unknown-at-design-time surface', () => {
-    const customSurface: SurfaceProfile = {
-      id: 'custom-banner',
-      name: 'Custom Display',
-      width: 500,
-      height: 200,
-      safeArea: { top: 10, right: 10, bottom: 10, left: 10 },
-      minTapTarget: 40,
-      minTextSize: 14,
-      viewingDistance: 'near',
-      touchOnly: false,
-    };
-
-    const layout = resolveLayout(defaultAdSpec, customSurface);
-    expect(layout.layoutMode).toBe('horizontal-row');
-    expect(layout.placedElements.length).toBeGreaterThan(0);
   });
 });

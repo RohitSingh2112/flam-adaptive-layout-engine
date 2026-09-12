@@ -1,77 +1,46 @@
-# Flam — Adaptive Layout Engine for Multi-Surface Ads
+# Flam — Multi-Surface Adaptive Ad Engine
 
-A clean, lightweight, constraint-based layout engine built in TypeScript and React that takes a **single declarative ad specification** and adapts it dynamically across wildly different surfaces (mobile portrait, mobile landscape, broadcast lower-third, retail kiosk, and cramped banner) **without per-surface hardcoded layouts or CSS media query hacks**.
+A type-safe, constraint-based layout engine built with TypeScript and React that takes a single declarative content specification and automatically resolves it across all major standard aspect ratios and display surfaces.
+
+---
+
+## 📱 Supported Screen Sizes & Aspect Ratios
+
+| Surface Name | Aspect Ratio | Dimensions (px) | Best For |
+|---|---|---|---|
+| **Widescreen Landscape** | **16:9** | $1920 \times 1080$ | TV screens, digital display boards, website banners, Zoom presentations (Full HD standard). |
+| **Full Vertical / Stories** | **9:16** | $1080 \times 1920$ | Mobile screens, Instagram Stories, TikTok, YouTube Shorts, vertical signage kiosks. |
+| **Universal Square** | **1:1** | $1080 \times 1080$ | Instagram feed posts, Facebook ads, centered digital flyers. |
+| **Standard Portrait** | **4:5** | $1080 \times 1350$ | Vertical social media posts (maximum screen space on phone feeds without cut off). |
+| **Presentation Landscape** | **4:3** | $1024 \times 768$ | Standard presentation slides, iPad screens, traditional desktop monitor displays. |
+| **Classic Photo Portrait** | **3:4** | $1200 \times 1600$ | E-commerce graphics, digital lookbooks, vertical blog flyers. |
+| **Cramped Banner** | **3.5:1** | $380 \times 110$ | Priority-based degradation stress test (P3 logo drops cleanly). |
+
+---
+
+## 🎨 Interactive Content Customization
+Click **Content Options** in the header to edit:
+- **Headline Text** (dynamic text re-wrapping)
+- **Price / Tagline** (secondary copy)
+- **CTA Button Label** (action label)
+- **Hero Image URL** (custom product visual)
+- **Background Color** (color picker + hex)
+- **CTA Accent Color** (color picker + hex)
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Installation
 ```bash
+# 1. Install dependencies
 npm install
-```
 
-### 2. Run Interactive Demo
-```bash
+# 2. Run development server
 npm run dev
-```
-Open `http://localhost:5173` to switch surfaces and test the engine live.
 
-### 3. Run Automated Tests
-```bash
+# 3. Run unit tests
 npm test
-```
 
-### 4. Build for Production
-```bash
+# 4. Build for production
 npm run build
 ```
-
----
-
-## 🎯 Architecture & Implementation
-
-### 1. Declarative Ad Spec (`src/spec.ts`)
-The ad is defined once with semantic roles and priority levels:
-```typescript
-const adSpec = defineAd({
-  id: 'flam-audio',
-  title: 'Flam Spatial One XR Headphones',
-  elements: [
-    { id: 'logo', type: 'image', role: 'logo', priority: 3, ... },
-    { id: 'headline', type: 'text', role: 'headline', priority: 1, ... },
-    { id: 'product-image', type: 'image', role: 'hero', priority: 1, ... },
-    { id: 'price', type: 'text', role: 'price', priority: 2, ... },
-    { id: 'cta', type: 'button', role: 'cta', priority: 1, ... },
-  ],
-});
-```
-
-### 2. Surface Profiles (`src/surfaces.ts`)
-Surfaces specify real constraints: dimensions, safe areas, minimum tap targets, and minimum readable text sizes:
-- **Mobile Portrait** ($320 \times 480$): Tall 9:16 portrait.
-- **Mobile Landscape** ($640 \times 360$): Widescreen smartphone layout.
-- **Broadcast Lower-Third** ($1920 \times 250$): Far viewing distance ($10\text{ft}$) enforcing $\ge 28\text{px}$ readable text.
-- **Retail Kiosk** ($1080 \times 1080$): Square touch kiosk enforcing $\ge 60\text{px}$ tap targets.
-- **Cramped Banner** ($380 \times 110$): Stress-test demonstrating priority degradation.
-
-### 3. Constraint Resolver Algorithm (`src/resolver.ts`)
-- **No hardcoded surface names**: Topology is chosen mathematically from continuous aspect ratio $\text{AR} = W_{\text{avail}} / H_{\text{avail}}$:
-  - $\text{AR} \ge 2.0 \implies$ **Horizontal Row** (Hero $\to$ Copy $\to$ CTA)
-  - $1.0 \le \text{AR} < 2.0 \implies$ **Two-Column Split** (Hero on left, text & CTA on right)
-  - $\text{AR} < 1.0 \implies$ **Vertical Stack** (Logo $\to$ Headline $\to$ Hero $\to$ Price $\to$ CTA)
-- **Priority Degradation**: If space is constrained, Priority 3 (`logo`) drops cleanly first, followed by Priority 2 (`price`), while Priority 1 (`headline`, `hero`, `cta`) are strictly preserved.
-
-### 4. DOM Renderer (`src/render-dom.tsx`)
-Pure presentation component that maps calculated layout coordinates `(x, y, width, height)` directly to styled elements with smooth CSS animations.
-
----
-
-## 🧪 Automated Test Suite
-- `✓ AdSpec Validation`: Prevents duplicate element IDs.
-- `✓ Mobile Portrait`: Adapts to vertical stack.
-- `✓ Mobile Landscape`: Adapts to two-column split.
-- `✓ Broadcast Lower-Third`: Adapts to horizontal row with enforced text size floor.
-- `✓ Retail Kiosk`: Adapts to two-column with enforced 60px tap target.
-- `✓ Priority Degradation`: Verifies Priority 3 logo drops cleanly on cramped banner while CTA and headline remain intact.
-- `✓ Unknown Surface`: Verifies live adaptation to an arbitrary custom aspect ratio.

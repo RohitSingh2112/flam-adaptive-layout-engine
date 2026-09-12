@@ -4,7 +4,8 @@
  * Takes an AdSpec and SurfaceProfile and dynamically computes:
  * 1. Layout Mode (based on Aspect Ratio, NOT surface name)
  * 2. Element positions and dimensions (no overlap, strictly within safe bounds)
- * 3. Priority Degradation (drops P3 logo, then P2 price if space is too constrained)
+ * 3. Density-aware scaling for High-Resolution surfaces (1080p, 4K)
+ * 4. Priority Degradation (drops P3 logo, then P2 price if space is too constrained)
  */
 
 import { AdSpec, AdElement } from './spec';
@@ -40,6 +41,9 @@ export function resolveLayout(spec: AdSpec, surface: SurfaceProfile): ResolvedLa
   const availW = surface.width - (safe.left + safe.right);
   const availH = surface.height - (safe.top + safe.bottom);
   const aspectRatio = availW / availH;
+
+  // Density reference scale (1.0 for ~400px mobile, 2.25 for 1080p)
+  const scaleRef = Math.max(1.0, Math.min(availW, availH) / 460);
 
   // 1. Priority Degradation Logic
   // If vertical space is cramped, drop lower-priority elements cleanly
@@ -81,54 +85,54 @@ export function resolveLayout(spec: AdSpec, surface: SurfaceProfile): ResolvedLa
   const price = activeElements.find(e => e.role === 'price');
   const cta = activeElements.find(e => e.role === 'cta');
 
-  // Enforce viewing distance / typography constraint
-  const baseFontSize = Math.max(surface.minTextSize, surface.viewingDistance === 'far' ? 28 : 15);
-  const btnHeight = Math.max(surface.minTapTarget, surface.viewingDistance === 'far' ? 56 : 44);
+  // Enforce viewing distance & tap target floors
+  const baseFontSize = Math.max(surface.minTextSize, Math.round(18 * scaleRef));
+  const btnHeight = Math.max(surface.minTapTarget, Math.round(48 * scaleRef));
 
-  // 2. Continuous Aspect-Ratio Layout Selection
+  // 2. Aspect-Ratio Driven Spatial Arrangement
   if (aspectRatio >= 2.0) {
     // -------------------------------------------------------------
-    // HORIZONTAL ROW (Broadcast / Wide Banners)
+    // HORIZONTAL ROW (Ultra-Wide Banners)
     // [Logo] [Hero Image] [Headline + Price] [CTA Button]
     // -------------------------------------------------------------
     layoutMode = 'horizontal-row';
-    const gap = 16;
+    const gap = Math.round(20 * scaleRef);
     let curX = safe.left;
     const centerY = safe.top + availH / 2;
 
     // Optional Logo
     if (logo) {
-      const logoH = Math.min(40, availH * 0.4);
-      const logoW = logoH * (logo.aspectRatio || 3.2);
+      const logoH = Math.min(Math.round(44 * scaleRef), availH * 0.4);
+      const logoW = Math.round(logoH * (logo.aspectRatio || 3.2));
       placedElements.push({
         id: logo.id,
         element: logo,
-        rect: { x: curX, y: Math.round(centerY - logoH / 2), width: Math.round(logoW), height: Math.round(logoH) },
+        rect: { x: curX, y: Math.round(centerY - logoH / 2), width: logoW, height: logoH },
       });
       curX += logoW + gap;
     }
 
     // Hero Visual
     if (hero) {
-      const heroH = availH * 0.85;
-      const heroW = heroH * (hero.aspectRatio || 1.1);
+      const heroH = Math.round(availH * 0.85);
+      const heroW = Math.round(heroH * (hero.aspectRatio || 1.1));
       placedElements.push({
         id: hero.id,
         element: hero,
-        rect: { x: Math.round(curX), y: Math.round(centerY - heroH / 2), width: Math.round(heroW), height: Math.round(heroH) },
+        rect: { x: curX, y: Math.round(centerY - heroH / 2), width: heroW, height: heroH },
       });
       curX += heroW + gap * 1.5;
     }
 
-    // CTA (Positioned from the right edge)
-    const ctaW = Math.max(160, availW * 0.16);
+    // CTA (Right aligned)
+    const ctaW = Math.max(Math.round(160 * scaleRef), Math.round(availW * 0.18));
     const ctaX = surface.width - safe.right - ctaW;
     if (cta) {
       placedElements.push({
         id: cta.id,
         element: cta,
-        rect: { x: Math.round(ctaX), y: Math.round(centerY - btnHeight / 2), width: Math.round(ctaW), height: btnHeight },
-        fontSize: Math.max(baseFontSize * 0.8, 14),
+        rect: { x: ctaX, y: Math.round(centerY - btnHeight / 2), width: ctaW, height: btnHeight },
+        fontSize: Math.round(btnHeight * 0.35),
       });
     }
 
@@ -140,7 +144,7 @@ export function resolveLayout(spec: AdSpec, surface: SurfaceProfile): ResolvedLa
       placedElements.push({
         id: headline.id,
         element: headline,
-        rect: { x: Math.round(curX), y: Math.round(headlineY), width: Math.round(middleW), height: Math.round(headlineH) },
+        rect: { x: curX, y: Math.round(headlineY), width: middleW, height: Math.round(headlineH) },
         fontSize: baseFontSize,
       });
 
@@ -148,154 +152,156 @@ export function resolveLayout(spec: AdSpec, surface: SurfaceProfile): ResolvedLa
         placedElements.push({
           id: price.id,
           element: price,
-          rect: { x: Math.round(curX), y: Math.round(headlineY + headlineH + 4), width: Math.round(middleW), height: Math.round(baseFontSize * 1.2) },
-          fontSize: Math.max(13, baseFontSize * 0.65),
+          rect: { x: curX, y: Math.round(headlineY + headlineH + 6), width: middleW, height: Math.round(baseFontSize * 1.2) },
+          fontSize: Math.round(baseFontSize * 0.75),
         });
       }
     }
 
-  } else if (aspectRatio >= 1.0) {
+  } else if (aspectRatio >= 1.05) {
     // -------------------------------------------------------------
-    // TWO-COLUMN SPLIT (Landscape Mobile, Tablets, Square Kiosk)
-    // Left: Hero visual
-    // Right: Logo + Headline + Price + CTA
+    // TWO-COLUMN SPLIT (16:9 Widescreen, 4:3 Presentation)
+    // Left Pane (48%): Hero Image
+    // Right Pane (52%): Logo + Headline + Price + CTA
     // -------------------------------------------------------------
     layoutMode = 'two-column';
-    const colGap = 20;
-    const leftW = Math.round((availW - colGap) * 0.45);
+    const colGap = Math.round(30 * scaleRef);
+    const leftW = Math.round((availW - colGap) * 0.46);
     const rightW = availW - colGap - leftW;
     const rightX = safe.left + leftW + colGap;
 
     // Left Column: Hero Image
     if (hero) {
       const heroH = Math.min(availH * 0.9, leftW / (hero.aspectRatio || 1.1));
-      const heroW = heroH * (hero.aspectRatio || 1.1);
+      const heroW = Math.round(heroH * (hero.aspectRatio || 1.1));
       placedElements.push({
         id: hero.id,
         element: hero,
         rect: {
           x: Math.round(safe.left + (leftW - heroW) / 2),
           y: Math.round(safe.top + (availH - heroH) / 2),
-          width: Math.round(heroW),
+          width: heroW,
           height: Math.round(heroH),
         },
       });
     }
 
     // Right Column Stack
-    let curY = safe.top + 8;
+    let curY = safe.top + Math.round(12 * scaleRef);
     if (logo) {
-      const logoH = 28;
-      const logoW = logoH * (logo.aspectRatio || 3.2);
+      const logoH = Math.round(32 * scaleRef);
+      const logoW = Math.round(logoH * (logo.aspectRatio || 3.2));
       placedElements.push({
         id: logo.id,
         element: logo,
-        rect: { x: rightX, y: curY, width: Math.round(logoW), height: logoH },
+        rect: { x: rightX, y: curY, width: logoW, height: logoH },
       });
-      curY += logoH + 12;
+      curY += logoH + Math.round(16 * scaleRef);
     }
 
     if (headline) {
-      const headlineFontSize = Math.min(32, Math.max(baseFontSize, availW * 0.035));
+      const headlineFontSize = Math.round(28 * scaleRef);
       const headlineH = headlineFontSize * 2.2;
       placedElements.push({
         id: headline.id,
         element: headline,
         rect: { x: rightX, y: curY, width: rightW, height: Math.round(headlineH) },
-        fontSize: Math.round(headlineFontSize),
+        fontSize: headlineFontSize,
       });
-      curY += headlineH + 10;
+      curY += Math.round(headlineH + 16 * scaleRef);
     }
 
     if (price) {
-      const priceFontSize = Math.round(baseFontSize * 0.85);
+      const priceFontSize = Math.round(18 * scaleRef);
       placedElements.push({
         id: price.id,
         element: price,
-        rect: { x: rightX, y: curY, width: rightW, height: 26 },
+        rect: { x: rightX, y: curY, width: rightW, height: Math.round(priceFontSize * 1.5) },
         fontSize: priceFontSize,
       });
-      curY += 34;
+      curY += Math.round(priceFontSize * 1.5 + 24 * scaleRef);
     }
 
     if (cta) {
-      const ctaW = Math.min(rightW, 240);
+      const ctaW = Math.min(rightW, Math.round(260 * scaleRef));
       const ctaY = Math.max(curY, safe.top + availH - btnHeight);
       placedElements.push({
         id: cta.id,
         element: cta,
-        rect: { x: rightX, y: Math.round(ctaY), width: Math.round(ctaW), height: btnHeight },
-        fontSize: Math.max(14, baseFontSize * 0.8),
+        rect: { x: rightX, y: Math.round(ctaY), width: ctaW, height: btnHeight },
+        fontSize: Math.round(btnHeight * 0.35),
       });
     }
 
   } else {
     // -------------------------------------------------------------
-    // VERTICAL STACK (Portrait Mobile Interstitial)
-    // Logo -> Headline -> Hero -> Price -> Bottom CTA
+    // VERTICAL STACK (9:16 Stories, 1:1 Square, 4:5 Portrait, 3:4 Classic)
+    // Logo -> Headline -> Center Hero -> Price -> Bottom CTA
     // -------------------------------------------------------------
     layoutMode = 'vertical-stack';
     let curY = safe.top;
 
     if (logo) {
-      const logoH = 24;
-      const logoW = logoH * (logo.aspectRatio || 3.2);
+      const logoH = Math.round(28 * scaleRef);
+      const logoW = Math.round(logoH * (logo.aspectRatio || 3.2));
       placedElements.push({
         id: logo.id,
         element: logo,
-        rect: { x: Math.round(safe.left + (availW - logoW) / 2), y: curY, width: Math.round(logoW), height: logoH },
+        rect: { x: Math.round(safe.left + (availW - logoW) / 2), y: curY, width: logoW, height: logoH },
       });
-      curY += logoH + 14;
+      curY += logoH + Math.round(18 * scaleRef);
     }
 
     if (headline) {
-      const headlineFontSize = Math.max(baseFontSize, 18);
+      const headlineFontSize = Math.round(24 * scaleRef);
       const headlineH = headlineFontSize * 2.2;
       placedElements.push({
         id: headline.id,
         element: headline,
         rect: { x: safe.left, y: curY, width: availW, height: Math.round(headlineH) },
-        fontSize: Math.round(headlineFontSize),
+        fontSize: headlineFontSize,
       });
-      curY += headlineH + 12;
+      curY += Math.round(headlineH + 16 * scaleRef);
     }
 
     // Reserve space for CTA + Price at bottom
-    const bottomSpace = btnHeight + (price ? 32 : 0) + 16;
-    const heroH = Math.max(80, safe.top + availH - curY - bottomSpace);
-    const heroW = Math.min(availW * 0.9, heroH * (hero?.aspectRatio || 1.1));
+    const bottomSpace = btnHeight + (price ? Math.round(36 * scaleRef) : 0) + Math.round(20 * scaleRef);
+    const heroH = Math.max(Math.round(80 * scaleRef), safe.top + availH - curY - bottomSpace);
+    const heroW = Math.min(availW * 0.92, heroH * (hero?.aspectRatio || 1.1));
 
     if (hero) {
+      const finalHeroH = Math.round(heroW / (hero.aspectRatio || 1.1));
       placedElements.push({
         id: hero.id,
         element: hero,
         rect: {
           x: Math.round(safe.left + (availW - heroW) / 2),
-          y: Math.round(curY + (heroH - (heroW / (hero.aspectRatio || 1.1))) / 2),
+          y: Math.round(curY + (heroH - finalHeroH) / 2),
           width: Math.round(heroW),
-          height: Math.round(heroW / (hero.aspectRatio || 1.1)),
+          height: finalHeroH,
         },
       });
-      curY += heroH + 10;
+      curY += Math.round(heroH + 12 * scaleRef);
     }
 
     if (price) {
+      const priceFontSize = Math.round(16 * scaleRef);
       placedElements.push({
         id: price.id,
         element: price,
-        rect: { x: safe.left, y: curY, width: availW, height: 24 },
-        fontSize: 15,
+        rect: { x: safe.left, y: curY, width: availW, height: Math.round(priceFontSize * 1.5) },
+        fontSize: priceFontSize,
       });
-      curY += 28;
+      curY += Math.round(priceFontSize * 1.5 + 16 * scaleRef);
     }
 
     if (cta) {
-      const ctaW = Math.min(availW, 280);
+      const ctaW = Math.min(availW, Math.round(320 * scaleRef));
       placedElements.push({
         id: cta.id,
         element: cta,
-        rect: { x: Math.round(safe.left + (availW - ctaW) / 2), y: Math.round(curY), width: Math.round(ctaW), height: btnHeight },
-        fontSize: 16,
+        rect: { x: Math.round(safe.left + (availW - ctaW) / 2), y: Math.round(curY), width: ctaW, height: btnHeight },
+        fontSize: Math.round(btnHeight * 0.35),
       });
     }
   }
