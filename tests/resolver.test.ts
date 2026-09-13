@@ -55,23 +55,49 @@ describe('Multi-Surface Layout Resolver for Standard Sizes', () => {
     expect(layout.placedElements.length).toBe(6);
   });
 
-  it('demonstrates priority-based degradation on cramped space (P3 logo drops cleanly)', () => {
-    const crampedTestSurface: SurfaceProfile = {
-      id: 'crampedTest',
-      name: 'Cramped Test Surface',
-      aspectRatioLabel: '3.5:1',
-      width: 380,
-      height: 110,
-      safeArea: { top: 8, right: 12, bottom: 8, left: 12 },
-      minTapTarget: 32,
-      minTextSize: 12,
-      viewingDistance: 'near',
-      touchOnly: false,
-    };
-    const layout = resolveLayout(defaultAdSpec, crampedTestSurface);
+  it('resolves Broadcast Lower-Third (1920x250) into horizontal-row with far viewing distance', () => {
+    const layout = resolveLayout(defaultAdSpec, surfaces.broadcastLowerThird);
+    expect(layout.layoutMode).toBe('horizontal-row');
+    expect(layout.aspectRatio).toBeGreaterThanOrEqual(2.0);
+    expect(layout.placedElements.length).toBe(6);
+
+    // Verify 2D bounding box separation (zero 2D collisions)
+    for (let i = 0; i < layout.placedElements.length; i++) {
+      for (let j = i + 1; j < layout.placedElements.length; j++) {
+        const a = layout.placedElements[i].rect;
+        const b = layout.placedElements[j].rect;
+        const overlaps =
+          a.x < b.x + b.width &&
+          a.x + a.width > b.x &&
+          a.y < b.y + b.height &&
+          a.y + a.height > b.y;
+        expect(overlaps).toBe(false);
+      }
+    }
+  });
+
+  it('demonstrates priority-based degradation on Cramped Banner (P3 logo drops cleanly)', () => {
+    const layout = resolveLayout(defaultAdSpec, surfaces.crampedBanner);
     expect(layout.droppedElements.length).toBeGreaterThan(0);
     const droppedLogo = layout.droppedElements.find(d => d.id === 'logo');
     expect(droppedLogo).toBeDefined();
     expect(droppedLogo!.priority).toBe(3);
+
+    // Critical Headline and CTA remain placed and intact
+    expect(layout.placedElements.some(p => p.element.role === 'headline')).toBe(true);
+    expect(layout.placedElements.some(p => p.element.role === 'cta')).toBe(true);
+  });
+
+  it('strictly enforces minTapTarget and minTextSize constraints', () => {
+    const layout = resolveLayout(defaultAdSpec, surfaces.broadcastLowerThird);
+    const cta = layout.placedElements.find(p => p.element.role === 'cta');
+    const headline = layout.placedElements.find(p => p.element.role === 'headline');
+
+    expect(cta).toBeDefined();
+    expect(cta!.rect.height).toBeGreaterThanOrEqual(surfaces.broadcastLowerThird.minTapTarget);
+
+    expect(headline).toBeDefined();
+    expect(headline!.fontSize).toBeGreaterThanOrEqual(surfaces.broadcastLowerThird.minTextSize);
   });
 });
+

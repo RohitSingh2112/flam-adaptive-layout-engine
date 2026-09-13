@@ -45,7 +45,7 @@ export function resolveLayout(spec: AdSpec, surface: SurfaceProfile): ResolvedLa
   // Density reference scale (1.0 for ~400px mobile, 2.25 for 1080p)
   const scaleRef = Math.max(1.0, Math.min(availW, availH) / 460);
 
-  // 1. Priority Degradation Logic
+  // 1. Priority Degradation Logic (Hierarchical Drop Pass)
   const activeElements = [...spec.elements];
   const droppedElements: { id: string; reason: string; priority: number }[] = [];
 
@@ -57,20 +57,33 @@ export function resolveLayout(spec: AdSpec, surface: SurfaceProfile): ResolvedLa
       droppedElements.push({
         id: dropped.id,
         priority: 3,
-        reason: `Dropped Priority 3 element because available height (${availH}px) is constrained.`,
+        reason: `Dropped Priority 3 (${dropped.role}) because available height (${availH}px) is under 180px threshold.`,
       });
     }
   }
 
-  // Drop Priority 2 description/price if vertical height is severely cramped under 120px
-  if (availH < 120) {
-    const p2Idx = activeElements.findIndex(e => e.priority === 2);
-    if (p2Idx !== -1) {
-      const dropped = activeElements.splice(p2Idx, 1)[0];
+  // Drop Priority 2 Description if vertical height is under 150px
+  if (availH < 150) {
+    const descIdx = activeElements.findIndex(e => e.role === 'description');
+    if (descIdx !== -1) {
+      const dropped = activeElements.splice(descIdx, 1)[0];
       droppedElements.push({
         id: dropped.id,
         priority: 2,
-        reason: `Dropped Priority 2 element to fit critical headline and CTA within ${availH}px height.`,
+        reason: `Dropped secondary description to protect headline & CTA legibility in constrained height (${availH}px).`,
+      });
+    }
+  }
+
+  // Drop Priority 2 Price if vertical height is severely cramped under 110px
+  if (availH < 110) {
+    const priceIdx = activeElements.findIndex(e => e.role === 'price');
+    if (priceIdx !== -1) {
+      const dropped = activeElements.splice(priceIdx, 1)[0];
+      droppedElements.push({
+        id: dropped.id,
+        priority: 2,
+        reason: `Dropped price tag to preserve critical conversion anchors (headline & CTA) in ${availH}px height.`,
       });
     }
   }
@@ -85,8 +98,9 @@ export function resolveLayout(spec: AdSpec, surface: SurfaceProfile): ResolvedLa
   const price = activeElements.find(e => e.role === 'price');
   const cta = activeElements.find(e => e.role === 'cta');
 
-  // Enforce viewing distance & tap target floors
-  const baseFontSize = Math.max(surface.minTextSize, Math.round(18 * scaleRef));
+  // Enforce surface hard constraints: minTextSize, minTapTarget, viewingDistance
+  const viewingMultiplier = surface.viewingDistance === 'far' ? 1.25 : 1.0;
+  const baseFontSize = Math.max(surface.minTextSize, Math.round(18 * scaleRef * viewingMultiplier));
   const btnHeight = Math.max(surface.minTapTarget, Math.round(48 * scaleRef));
 
   // 2. Aspect-Ratio Driven Spatial Arrangement
